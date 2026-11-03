@@ -21,5 +21,48 @@ knitr::opts_hooks$set(engine = function(options) {
 Explain what this step does and why, and copy each command you ran into a
 bash chunk. R chunks run from the top of the repository.
 -->
+There are 77 bins total that were formed 
 
+#run checkm to see the bins in metabat
+cd ~/bbd-metagenome/checkm
+
+#we need to find the longest contig as that is usually not included
+#sorts from smallest to largest
+cat ../flye/bbd/assembly.fasta | bioawk -c fastx '{print length($seq),$name}' | sort -n
+#the largest contig is contig_116 (4706700)
+
+#save contig_116 to a bin of its own within the metabat bins
+#copy all the bins into the bins_bbd folder within checkm
+samtools faidx ../flye/bbd/assembly.fasta contig_XX > ../metabat/bins_bbd/contig_XX.fa
+cp ../metabat/bins_bbd/*.fa bins_bbd/
+
+#create a new squirm script labeled run_checkm_bbd.sh for your checkm
+#!/bin/bash
+#SBATCH --time=60
+#SBATCH --ntasks=6 --mem=40gb
+
+echo "Starting checkm in $(pwd) at $(date)"
+
+shopt -s expand_aliases
+alias checkm='apptainer run -B /pvol/:/pvol /pvol/data/sif/checkm.sif checkm'
+
+checkm lineage_wf bins_bbd out -t 6 -x fa -f checkm_results_bbd.txt
+
+echo "Finished checkm in $(pwd) at $(date)"
+
+#run the script
+sbatch run_checkm_bbd.sh
+
+#once script has loaded, change directory to checkm folder in terminal
+cd ~/bbd-metagenome/checkm
+
+#check results for checkm anaylasis
+head checkm_results_bbd.txt 
+
+#sort to only show bins with 15% completeness or more
+cat checkm_results_bbd.txt | awk '$13>15'
+#further sort to just show the bin id
+cat checkm_results_bbd.txt | awk '$13>15{print $1}'
+#send this output into a file
+cat checkm_results_bbd.txt | awk '$13>15{print $1}' > bbd_topbins.txt
 Completeness and contamination of each bin, estimated with CheckM, and selection of the most complete bins for further analysis. Commands for this step were run in `checkm/`.
