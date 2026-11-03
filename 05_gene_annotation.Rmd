@@ -21,5 +21,26 @@ knitr::opts_hooks$set(engine = function(options) {
 Explain what this step does and why, and copy each command you ran into a
 bash chunk. R chunks run from the top of the repository.
 -->
+#change to prooka dirctory
+cd ~/bbd-metagenome/prokka
 
+#run prokka for all metagenomes
+#create new scrpt named run_prokka.sh and save in prokka dircetory
+#copy code and submite job
+#!/bin/bash
+#SBATCH --time=90
+#SBATCH --ntasks=2 --mem=2gb
+
+echo "Starting prokka in $(pwd) at $(date)"
+
+shopt -s expand_aliases
+alias prokka='apptainer run -B /pvol/:/pvol /pvol/data/sif/prokka.sif prokka'
+
+while read bin;do 
+  prokka --cpus 2 --outdir $bin --prefix $bin "../metabat/bins_bbd/${bin}.fa";
+done < ../checkm/bbd_topbins.txt
+
+echo "Finished prokka in $(pwd) at $(date)"
+#submit job
+sbatch run_prokka.sh
 Gene prediction and annotation of the most complete bins with Prokka. Commands for this step were run in `prokka/`.

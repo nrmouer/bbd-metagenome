@@ -20,6 +20,29 @@ knitr::opts_hooks$set(engine = function(options) {
 <!--
 Explain what this step does and why, and copy each command you ran into a
 bash chunk. R chunks run from the top of the repository.
+
+#Change directory to minpath
+cd ~/bbd-metagenome/minpath
+
+#look at single bin file
+head ../prokka/metabat.7/metabat.7.tsv
+
+#we only want to keep the unique id for each bin
+head ../prokka/metabat.5/metabat.5.tsv | awk -F '\t' '{print $1,$5}'
+
+#include lines with an EC number 
+head ../prokka/metabat.5/metabat.5.tsv | awk -F '\t' '$5{print $1,$5}'
+
+
+
+#lopk at photosynthetic pathway PWY-101
+grep 'PWY-101' *.ec.report
+
+Questions 4.1?
+How many bins contain at least one gene from this pathway? 5 bins
+Which bin has all of the genes (ie a complete pathway)?
+For which bins does minpath keep the pathway (minpath 1)?
 -->
+
 
 Metabolic pathways inferred from the Prokka annotations with MinPath. Commands for this step were run in `minpath/`.

@@ -43,6 +43,15 @@ ls genomes
 #SBATCH --time=120
 #SBATCH --ntasks=2 --mem=56gb
 
+#submit file
+sbatch run_gtdbtk.sh
+
+#Check to see if the classifcation worked
+ls -l out/gtdbtk.bac120.summary.tsv
+
+#copy summary into the gtdbtk folder
+cp out/gtdbtk.bac120.summary.tsv .
+
 echo "Starting gtdbtk in $(pwd) at $(date)"
 
 shopt -s expand_aliases
