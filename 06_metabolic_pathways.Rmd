@@ -1,6 +1,6 @@
 ---
 title: "BBD Metagenome: Metabolic Pathways"
-author: "Your Name"
+author: "Nora Mouer"
 date: "`r Sys.Date()`"
 output:
   github_document:
@@ -17,32 +17,36 @@ knitr::opts_hooks$set(engine = function(options) {
 })
 ```
 
-<!--
-Explain what this step does and why, and copy each command you ran into a
-bash chunk. R chunks run from the top of the repository.
-
-#Change directory to minpath
-cd ~/bbd-metagenome/minpath
-
-#look at single bin file
+Organize ID
+Code:
 head ../prokka/metabat.7/metabat.7.tsv
+head ../prokka/metabat.7/metabat.7.tsv | awk -F '\t' '{print $1,$5}'
+head ../prokka/metabat.7/metabat.7.tsv | awk -F '\t' '$5{print $1,$5}'
+cat ../prokka/metabat.7/metabat.7.tsv | awk -F '\t' '$5{OFS="\t";print $1,$5}' | grep -v '^locus'
+cat ../prokka/metabat.7/metabat.7.tsv | awk -F '\t' '$5{OFS="\t";print $1,$5}' | grep -v '^locus' > metabat.5.ec
+minpath -ec metabat.7.ec -report metabat.7.ec.report -details metabat.7.ec.details
+tail ../prokka/slurm-493.out
 
-#we only want to keep the unique id for each bin
-head ../prokka/metabat.5/metabat.5.tsv | awk -F '\t' '{print $1,$5}'
 
-#include lines with an EC number 
-head ../prokka/metabat.5/metabat.5.tsv | awk -F '\t' '$5{print $1,$5}'
+Run minpath on the bins
+Code:
+while read bin;do 
+  cat ../prokka/$bin/${bin}.tsv | awk -F '\t' '$5{printf("%s\t%s\n", $1,$5)}' | grep -v '^locus' > ${bin}.ec 
+done < ../checkm/bbd_topbins.txt
 
 
+while read bin;do 
+  minpath -ec ${bin}.ec -report ${bin}.ec.report -details ${bin}.ec.details
+done < ../checkm/bbd_topbins.txt
 
-#lopk at photosynthetic pathway PWY-101
+
+Look at pathway PWY-101
+Code:
 grep 'PWY-101' *.ec.report
 
-Questions 4.1?
-How many bins contain at least one gene from this pathway? 5 bins
-Which bin has all of the genes (ie a complete pathway)?
-For which bins does minpath keep the pathway (minpath 1)?
--->
+Look at pathway PWY-5360
+Code:
+grep 'PWY-5360' *.ec.report
 
 
 Metabolic pathways inferred from the Prokka annotations with MinPath. Commands for this step were run in `minpath/`.

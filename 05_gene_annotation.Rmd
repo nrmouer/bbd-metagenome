@@ -1,6 +1,6 @@
 ---
 title: "BBD Metagenome: Gene Annotation"
-author: "Your Name"
+author: Nora Mouer
 date: "`r Sys.Date()`"
 output:
   github_document:
@@ -17,19 +17,11 @@ knitr::opts_hooks$set(engine = function(options) {
 })
 ```
 
-<!--
-Explain what this step does and why, and copy each command you ran into a
-bash chunk. R chunks run from the top of the repository.
--->
-#change to prooka dirctory
-cd ~/bbd-metagenome/prokka
-
-#run prokka for all metagenomes
-#create new scrpt named run_prokka.sh and save in prokka dircetory
-#copy code and submite job
+Create script labeled as run_prokka.sh
+Code:
 #!/bin/bash
 #SBATCH --time=90
-#SBATCH --ntasks=2 --mem=2gb
+#SBATCH --cpus-per-task=2 --mem=2gb
 
 echo "Starting prokka in $(pwd) at $(date)"
 
@@ -41,6 +33,12 @@ while read bin;do
 done < ../checkm/bbd_topbins.txt
 
 echo "Finished prokka in $(pwd) at $(date)"
-#submit job
+
+
+
+Submit batch
+Code:
 sbatch run_prokka.sh
+
+
 Gene prediction and annotation of the most complete bins with Prokka. Commands for this step were run in `prokka/`.
