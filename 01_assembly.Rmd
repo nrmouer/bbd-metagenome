@@ -17,8 +17,10 @@ knitr::opts_hooks$set(engine = function(options) {
 })
 ```
 
+Assembly of the BBD nanopore reads with Flye. Commands for this step were run in `flye/`.
+
 Made new fly script labled run_flye.bbd.sh and saved to flye directory
-Code for script:
+```{bash}
 #!/bin/bash
 #SBATCH --time=720
 #SBATCH --cpus-per-task=12 --mem=20gb
@@ -28,12 +30,10 @@ echo "Starting flye bbd in $(pwd) at $(date)"
 flye --nano-hq bbd_0.1.fastq.gz --threads 12 --out-dir bbd --meta
 
 echo "Finished flye bbd in $(pwd) at $(date)"
-
-
+```
 
 Run sbatch on run_flye.bbd
+```{Bash}
+sbatch run_flye_bbd.sh
+```
 
-
-
-
-Assembly of the BBD nanopore reads with Flye. Commands for this step were run in `flye/`.

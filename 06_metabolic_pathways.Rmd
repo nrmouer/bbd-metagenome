@@ -6,6 +6,7 @@ output:
   github_document:
     html_preview: false
 ---
+Metabolic pathways inferred from the Prokka annotations with MinPath. Commands for this step were run in `minpath/`.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -18,7 +19,7 @@ knitr::opts_hooks$set(engine = function(options) {
 ```
 
 Organize ID
-Code:
+```{bash}
 head ../prokka/metabat.7/metabat.7.tsv
 head ../prokka/metabat.7/metabat.7.tsv | awk -F '\t' '{print $1,$5}'
 head ../prokka/metabat.7/metabat.7.tsv | awk -F '\t' '$5{print $1,$5}'
@@ -26,27 +27,25 @@ cat ../prokka/metabat.7/metabat.7.tsv | awk -F '\t' '$5{OFS="\t";print $1,$5}' |
 cat ../prokka/metabat.7/metabat.7.tsv | awk -F '\t' '$5{OFS="\t";print $1,$5}' | grep -v '^locus' > metabat.5.ec
 minpath -ec metabat.7.ec -report metabat.7.ec.report -details metabat.7.ec.details
 tail ../prokka/slurm-493.out
-
+```
 
 Run minpath on the bins
-Code:
+```{bash}
 while read bin;do 
   cat ../prokka/$bin/${bin}.tsv | awk -F '\t' '$5{printf("%s\t%s\n", $1,$5)}' | grep -v '^locus' > ${bin}.ec 
 done < ../checkm/bbd_topbins.txt
 
-
 while read bin;do 
   minpath -ec ${bin}.ec -report ${bin}.ec.report -details ${bin}.ec.details
 done < ../checkm/bbd_topbins.txt
-
+```
 
 Look at pathway PWY-101
-Code:
+```{bash}
 grep 'PWY-101' *.ec.report
+```
 
 Look at pathway PWY-5360
-Code:
+```{bash}
 grep 'PWY-5360' *.ec.report
-
-
-Metabolic pathways inferred from the Prokka annotations with MinPath. Commands for this step were run in `minpath/`.
+```

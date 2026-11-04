@@ -16,9 +16,10 @@ knitr::opts_hooks$set(engine = function(options) {
   options
 })
 ```
+Gene prediction and annotation of the most complete bins with Prokka. Commands for this step were run in `prokka/`.
 
 Create script labeled as run_prokka.sh
-Code:
+```{bash}
 #!/bin/bash
 #SBATCH --time=90
 #SBATCH --cpus-per-task=2 --mem=2gb
@@ -33,12 +34,9 @@ while read bin;do
 done < ../checkm/bbd_topbins.txt
 
 echo "Finished prokka in $(pwd) at $(date)"
-
-
+```
 
 Submit batch
-Code:
+```{bash}
 sbatch run_prokka.sh
-
-
-Gene prediction and annotation of the most complete bins with Prokka. Commands for this step were run in `prokka/`.
+```

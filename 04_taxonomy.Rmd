@@ -7,6 +7,7 @@ output:
     html_preview: false
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # Bash chunks are a record of commands you ran in the Terminal. Knitting shows
@@ -16,32 +17,35 @@ knitr::opts_hooks$set(engine = function(options) {
   options
 })
 ```
+Taxonomic classification of the most complete bins with GTDB-Tk. Commands for this step were run in `gtdbtk/`
 
 Create loop
-Code:
+```{bash}
 while read bin;do echo $bin;done < ../checkm/bbd_topbins.txt
+```
 
 Prepare file and copy
-Code:
+```{bash}
 while read bin;do echo "../metabat/bins_bbd/${bin}.fa";done < ../checkm/bbd_topbins.txt
 while read bin;do cp "../metabat/bins_bbd/${bin}.fa" genomes;done < ../checkm/bbd_topbins.txt
 ls genomes
-
+```
 
 Create script file labeled as run_gtdbtk.sh
-Code:
+```{bash}
 #!/bin/bash
 #SBATCH --time=120
 #SBATCH --ntasks=2 --mem=56gb
 
+```
 
 Submit batch
-Code:
+```{bash}
 sbatch run_gtdbtk.sh
-
+```
 
 Copy summary
-Code:
+```{bash}
 cp out/gtdbtk.bac120.summary.tsv .
 
 echo "Starting gtdbtk in $(pwd) at $(date)"
@@ -51,6 +55,4 @@ alias gtdbtk='apptainer run -B /pvol:/pvol,/pvol/data/mg/gtdbtkdata/release207_v
 
 gtdbtk classify_wf -x fa --cpus 2 --genome_dir genomes --out_dir out --skip_ani_screen
 echo "Finished gtdbtk in $(pwd) at $(date)"
-
-
-Taxonomic classification of the most complete bins with GTDB-Tk. Commands for this step were run in `gtdbtk/`.
+```
