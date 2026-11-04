@@ -1509,100 +1509,124 @@ echo &quot;Starting flye bbd in $(pwd) at $(date)&quot;
 flye --nano-hq bbd_0.1.fastq.gz --threads 12 --out-dir bbd --meta
 
 echo &quot;Finished flye bbd in $(pwd) at $(date)&quot;</code></pre>
-<p>Run Sbatch on run_flye.bbd</p>
+<p>Run sbatch on run_flye.bbd</p>
 <pre class="bash"><code>sbatch run_flye_bbd.sh</code></pre>
 </div>
 <div id="binning" class="section level1">
 <h1>Binning</h1>
-<p>Extract bin depth and reorder Code: cat ../flye/bbd/assembly_info.txt
-| grep -v ‘#’ | awk ‘{OFS=“;print $1,$3}’ &gt; depths_bbd.txt cat
-depths_bbd.txt | awk ‘{print $1}’ | xargs samtools faidx
-../flye/bbd/assembly.fasta &gt; assembly_bbd_ordered.fasta</p>
-<p>Run metabat code: metabat2 -i assembly_bbd_ordered.fasta -a
-depths_bbd.txt –cvExt -o bins_bbd/metabat –seed 5</p>
 <p>Binning of the assembled contigs into genomes with MetaBAT 2.
 Commands for this step were run in <code>metabat/</code>.</p>
+<p>Extract bin depth and reorder</p>
+<pre class="bash"><code>cat ../flye/bbd/assembly_info.txt  | grep -v &#39;#&#39; | awk &#39;{OFS=&quot;\t&quot;;print $1,$3}&#39; &gt; depths_bbd.txt
+cat depths_bbd.txt | awk &#39;{print $1}&#39; | xargs samtools faidx ../flye/bbd/assembly.fasta &gt; assembly_bbd_ordered.fasta</code></pre>
+<p>Run metabat</p>
+<pre class="bash"><code>metabat2 -i assembly_bbd_ordered.fasta -a depths_bbd.txt --cvExt -o bins_bbd/metabat --seed 5</code></pre>
 </div>
 <div id="bin-quality" class="section level1">
 <h1>Bin quality</h1>
-<p>We need to find the longest contig as it usually is not included
-code: cat ../flye/bbd/assembly.fasta | bioawk -c fastx ‘{print
-length(<span class="math inline">\(seq),\)</span>name}’ | sort -n</p>
-<p>The largest contig was contig_116 Save contig_116 to bin and copy all
-bins code: samtools faidx ../flye/bbd/assembly.fasta contig_XX &gt;
-../metabat/bins_bbd/contig_XX.fa cp ../metabat/bins_bbd/*.fa
-bins_bbd/</p>
-<p>Create script labeled as run_checkm.bbd.sh code: !/bin/bash #SBATCH
-–time=60 #SBATCH –ntasks=6 –mem=40gb #echo “Starting checkm in $(pwd) at
-$(date)”</p>
-<p>shopt -s expand_aliases alias checkm=‘apptainer run -B /pvol/:/pvol
-/pvol/data/sif/checkm.sif checkm’</p>
-<p>checkm lineage_wf bins_bbd out -t 6 -x fa -f
-checkm_results_bbd.txt</p>
-<p>echo “Finished checkm in $(pwd) at $(date)”</p>
-<p>Run Sbatch code: sbatch run_checkm_bbd.sh</p>
-<p>Sort for 15% completeness and show bin ID Code: cat
-checkm_results_bbd.txt | awk ‘$13&gt;15’ cat checkm_results_bbd.txt |
-awk ‘$13&gt;15{print $1}’ cat checkm_results_bbd.txt | awk
-‘$13&gt;15{print $1}’ &gt; bbd_topbins.txt</p>
 <p>Completeness and contamination of each bin, estimated with CheckM,
 and selection of the most complete bins for further analysis. Commands
 for this step were run in <code>checkm/</code>.</p>
+<p>We need to find the longest contig as it usually is not included</p>
+<pre class="bash"><code>cat ../flye/bbd/assembly.fasta | bioawk -c fastx &#39;{print length($seq),$name}&#39; | sort -n</code></pre>
+<p>The largest contig was contig_116</p>
+<p>Save contig_116 to bin and copy all bins</p>
+<pre class="bash"><code>samtools faidx ../flye/bbd/assembly.fasta contig_XX &gt; ../metabat/bins_bbd/contig_XX.fa
+cp ../metabat/bins_bbd/*.fa bins_bbd/</code></pre>
+<p>Create script labeled as run_checkm.bbd.sh</p>
+<pre class="bash"><code>!/bin/bash
+#SBATCH --time=60
+#SBATCH --ntasks=6 --mem=40gb
+#echo &quot;Starting checkm in $(pwd) at $(date)&quot;
+
+shopt -s expand_aliases
+alias checkm=&#39;apptainer run -B /pvol/:/pvol /pvol/data/sif/checkm.sif checkm&#39;
+
+checkm lineage_wf bins_bbd out -t 6 -x fa -f checkm_results_bbd.txt
+
+echo &quot;Finished checkm in $(pwd) at $(date)&quot;
+</code></pre>
+<p>Run sbatch</p>
+<pre class="bash"><code>sbatch run_checkm_bbd.sh</code></pre>
+<p>Sort for 15% completeness and show bin ID</p>
+<pre class="bash"><code>cat checkm_results_bbd.txt | awk &#39;$13&gt;15&#39;
+cat checkm_results_bbd.txt | awk &#39;$13&gt;15{print $1}&#39;
+cat checkm_results_bbd.txt | awk &#39;$13&gt;15{print $1}&#39; &gt; bbd_topbins.txt</code></pre>
 </div>
 <div id="taxonomy" class="section level1">
 <h1>Taxonomy</h1>
-<p>Create loop Code: while read bin;do echo $bin;done &lt;
-../checkm/bbd_topbins.txt</p>
-<p>Prepare file and copy Code: while read bin;do echo
-“../metabat/bins_bbd/<span class="math inline">\({bin}.fa&quot;;done
-&lt; ../checkm/bbd_topbins.txt
-while read bin;do cp &quot;../metabat/bins_bbd/\)</span>{bin}.fa”
-genomes;done &lt; ../checkm/bbd_topbins.txt ls genomes</p>
-<p>Create script file labeled as run_gtdbtk.sh Code: #!/bin/bash #SBATCH
-–time=120 #SBATCH –ntasks=2 –mem=56gb</p>
-<p>Submit batch Code: sbatch run_gtdbtk.sh</p>
-<p>Copy summary Code: cp out/gtdbtk.bac120.summary.tsv .</p>
-<p>echo “Starting gtdbtk in $(pwd) at $(date)”</p>
-<p>shopt -s expand_aliases alias gtdbtk=‘apptainer run -B
-/pvol:/pvol,/pvol/data/mg/gtdbtkdata/release207_v2/:/refdata
-/pvol/data/sif/gtdbtk.sif’</p>
-<p>gtdbtk classify_wf -x fa –cpus 2 –genome_dir genomes –out_dir out
-–skip_ani_screen echo “Finished gtdbtk in $(pwd) at $(date)”</p>
 <p>Taxonomic classification of the most complete bins with GTDB-Tk.
-Commands for this step were run in <code>gtdbtk/</code>.</p>
+Commands for this step were run in <code>gtdbtk/</code></p>
+<p>Create loop</p>
+<pre class="bash"><code>while read bin;do echo $bin;done &lt; ../checkm/bbd_topbins.txt</code></pre>
+<p>Prepare file and copy</p>
+<pre class="bash"><code>while read bin;do echo &quot;../metabat/bins_bbd/${bin}.fa&quot;;done &lt; ../checkm/bbd_topbins.txt
+while read bin;do cp &quot;../metabat/bins_bbd/${bin}.fa&quot; genomes;done &lt; ../checkm/bbd_topbins.txt
+ls genomes</code></pre>
+<p>Create script file labeled as run_gtdbtk.sh</p>
+<pre class="bash"><code>#!/bin/bash
+#SBATCH --time=120
+#SBATCH --ntasks=2 --mem=56gb
+</code></pre>
+<p>Submit batch</p>
+<pre class="bash"><code>sbatch run_gtdbtk.sh</code></pre>
+<p>Copy summary</p>
+<pre class="bash"><code>cp out/gtdbtk.bac120.summary.tsv .
+
+echo &quot;Starting gtdbtk in $(pwd) at $(date)&quot;
+
+shopt -s expand_aliases
+alias gtdbtk=&#39;apptainer run -B /pvol:/pvol,/pvol/data/mg/gtdbtkdata/release207_v2/:/refdata /pvol/data/sif/gtdbtk.sif&#39;
+
+gtdbtk classify_wf -x fa --cpus 2 --genome_dir genomes --out_dir out --skip_ani_screen
+echo &quot;Finished gtdbtk in $(pwd) at $(date)&quot;</code></pre>
 </div>
 <div id="gene-annotation" class="section level1">
 <h1>Gene annotation</h1>
-<p>Create script labeled as run_prokka.sh Code: #!/bin/bash #SBATCH
-–time=90 #SBATCH –cpus-per-task=2 –mem=2gb</p>
-<p>echo “Starting prokka in $(pwd) at $(date)”</p>
-<p>shopt -s expand_aliases alias prokka=‘apptainer run -B /pvol/:/pvol
-/pvol/data/sif/prokka.sif prokka’</p>
-<p>while read bin;do prokka –cpus 2 –outdir $bin –prefix <span class="math inline">\(bin &quot;../metabat/bins_bbd/\)</span>{bin}.fa”;
-done &lt; ../checkm/bbd_topbins.txt</p>
-<p>echo “Finished prokka in $(pwd) at $(date)”</p>
-<p>Submit batch Code: sbatch run_prokka.sh</p>
 <p>Gene prediction and annotation of the most complete bins with Prokka.
 Commands for this step were run in <code>prokka/</code>.</p>
+<p>Create script labeled as run_prokka.sh</p>
+<pre class="bash"><code>#!/bin/bash
+#SBATCH --time=90
+#SBATCH --cpus-per-task=2 --mem=2gb
+
+echo &quot;Starting prokka in $(pwd) at $(date)&quot;
+
+shopt -s expand_aliases
+alias prokka=&#39;apptainer run -B /pvol/:/pvol /pvol/data/sif/prokka.sif prokka&#39;
+
+while read bin;do 
+  prokka --cpus 2 --outdir $bin --prefix $bin &quot;../metabat/bins_bbd/${bin}.fa&quot;;
+done &lt; ../checkm/bbd_topbins.txt
+
+echo &quot;Finished prokka in $(pwd) at $(date)&quot;</code></pre>
+<p>Submit batch</p>
+<pre class="bash"><code>sbatch run_prokka.sh</code></pre>
 </div>
 <div id="metabolic-pathways" class="section level1">
 <h1>Metabolic pathways</h1>
-<p>Organize ID Code: head ../prokka/metabat.7/metabat.7.tsv head
-../prokka/metabat.7/metabat.7.tsv | awk -F ‘’{print $1,$5}’ head
-../prokka/metabat.7/metabat.7.tsv | awk -F ‘’$5{print $1,$5}’ cat
-../prokka/metabat.7/metabat.7.tsv | awk -F ‘’$5{OFS=“;print $1,$5}’ |
-grep -v ‘^locus’ cat ../prokka/metabat.7/metabat.7.tsv | awk -F
-‘’$5{OFS=”;print $1,$5}’ | grep -v ‘^locus’ &gt; metabat.5.ec minpath
--ec metabat.7.ec -report metabat.7.ec.report -details
-metabat.7.ec.details tail ../prokka/slurm-493.out</p>
-<p>Run minpath on the bins Code: while read bin;do cat ../prokka/<span class="math inline">\(bin/\)</span>{bin}.tsv | awk -F ‘’$5{printf(“%sone
-&lt; ../checkm/bbd_topbins.txt</p>
-<p>while read bin;do minpath -ec ${bin}.ec -report ${bin}.ec.report
--details ${bin}.ec.details done &lt; ../checkm/bbd_topbins.txt</p>
-<p>Look at pathway PWY-101 Code: grep ‘PWY-101’ *.ec.report</p>
-<p>Look at pathway PWY-5360 Code: grep ‘PWY-5360’ *.ec.report</p>
 <p>Metabolic pathways inferred from the Prokka annotations with MinPath.
 Commands for this step were run in <code>minpath/</code>.</p>
+<p>Organize ID</p>
+<pre class="bash"><code>head ../prokka/metabat.7/metabat.7.tsv
+head ../prokka/metabat.7/metabat.7.tsv | awk -F &#39;\t&#39; &#39;{print $1,$5}&#39;
+head ../prokka/metabat.7/metabat.7.tsv | awk -F &#39;\t&#39; &#39;$5{print $1,$5}&#39;
+cat ../prokka/metabat.7/metabat.7.tsv | awk -F &#39;\t&#39; &#39;$5{OFS=&quot;\t&quot;;print $1,$5}&#39; | grep -v &#39;^locus&#39;
+cat ../prokka/metabat.7/metabat.7.tsv | awk -F &#39;\t&#39; &#39;$5{OFS=&quot;\t&quot;;print $1,$5}&#39; | grep -v &#39;^locus&#39; &gt; metabat.5.ec
+minpath -ec metabat.7.ec -report metabat.7.ec.report -details metabat.7.ec.details
+tail ../prokka/slurm-493.out</code></pre>
+<p>Run minpath on the bins</p>
+<pre class="bash"><code>while read bin;do 
+  cat ../prokka/$bin/${bin}.tsv | awk -F &#39;\t&#39; &#39;$5{printf(&quot;%s\t%s\n&quot;, $1,$5)}&#39; | grep -v &#39;^locus&#39; &gt; ${bin}.ec 
+done &lt; ../checkm/bbd_topbins.txt
+
+while read bin;do 
+  minpath -ec ${bin}.ec -report ${bin}.ec.report -details ${bin}.ec.details
+done &lt; ../checkm/bbd_topbins.txt</code></pre>
+<p>Look at pathway PWY-101</p>
+<pre class="bash"><code>grep &#39;PWY-101&#39; *.ec.report</code></pre>
+<p>Look at pathway PWY-5360</p>
+<pre class="bash"><code>grep &#39;PWY-5360&#39; *.ec.report</code></pre>
 </div>
 
 
